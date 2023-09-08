@@ -90,18 +90,18 @@ class AppConfigStack(Stack):
             'AppConfigHostedConfigurationVersion',
             application_id=application.ref,
             configuration_profile_id=configuration_profile.ref,
-            latest_version_number=0.1,
+            latest_version_number=1,
             content_type='application/json',
             content=json.dumps(
                 {
-                    'version': '0.1',
+                    'version': "1",
                     'flags': {
-                        'BLOCK_DATABASE_WRITES': {
-                            'name': 'BLOCK_DATABASE_WRITES',
+                        'block_database_writes': {
+                            'name': 'block_database_writes'
                         }
                     },
                     'values': {
-                        'BLOCK_DATABASE_WRITES': {
+                        'block_database_writes': {
                             'enabled': False
                         }
                     }
@@ -118,7 +118,7 @@ class AppConfigStack(Stack):
             'AppConfigDeployment',
             application_id=application.ref,
             configuration_profile_id=configuration_profile.ref,
-            configuration_version='0.1',
+            configuration_version=configuration_version.ref,
             deployment_strategy_id=deployment_strategy.ref,
             environment_id=environment.ref,
         )
