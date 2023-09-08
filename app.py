@@ -9,6 +9,7 @@ from aws_cdk.aws_appconfig import CfnEnvironment
 from aws_cdk.aws_appconfig import CfnConfigurationProfile
 from aws_cdk.aws_appconfig import CfnDeploymentStrategy
 from aws_cdk.aws_appconfig import CfnHostedConfigurationVersion
+from aws_cdk.aws_appconfig import CfnDeployment
 
 from constructs import Construct
 
@@ -89,11 +90,11 @@ class AppConfigStack(Stack):
             'AppConfigHostedConfigurationVersion',
             application_id=application.ref,
             configuration_profile_id=configuration_profile.ref,
-            latest_version_number='0.1.0',
+            latest_version_number=0.1,
             content_type='application/json',
             content=json.dumps(
                 {
-                    'version': '0.1.0',
+                    'version': '0.1',
                     'flags': {
                         'BLOCK_DATABASE_WRITES': {
                             'name': 'BLOCK_DATABASE_WRITES',
@@ -106,6 +107,20 @@ class AppConfigStack(Stack):
                     }
                 }
             )
+        )
+
+        configuration_version.apply_removal_policy(
+            policy=RemovalPolicy.DESTROY
+        )
+
+        deployment = CfnDeployment(
+            self,
+            'AppConfigDeployment',
+            application_id=application.ref,
+            configuration_profile_id=configuration_profile.ref,
+            configuration_version='0.1',
+            deployment_strategy_id=deployment_strategy.ref,
+            environment_id=environment.ref,
         )
 
 
