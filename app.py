@@ -94,7 +94,7 @@ class AppConfigStack(Stack):
             content_type='application/json',
             content=json.dumps(
                 {
-                    'version': "1",
+                    'version': '1',
                     'flags': {
                         'block_database_writes': {
                             'name': 'block_database_writes'
