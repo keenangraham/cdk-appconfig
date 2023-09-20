@@ -3,6 +3,9 @@ import json
 from aws_cdk import App
 from aws_cdk import Stack
 from aws_cdk import RemovalPolicy
+from aws_cdk import CfnOutput
+from aws_cdk import CustomResource
+from aws_cdk import Duration
 
 from aws_cdk.aws_appconfig import CfnApplication
 from aws_cdk.aws_appconfig import CfnEnvironment
@@ -11,10 +14,22 @@ from aws_cdk.aws_appconfig import CfnDeploymentStrategy
 from aws_cdk.aws_appconfig import CfnHostedConfigurationVersion
 from aws_cdk.aws_appconfig import CfnDeployment
 
+from aws_cdk.aws_iam import PolicyStatement
+from aws_cdk.aws_iam import Role
+
+from aws_cdk.custom_resources import Provider
+
+from aws_cdk.aws_lambda_python_alpha import PythonFunction
+
+from aws_cdk.aws_lambda import Runtime
+
+from aws_cdk.aws_logs import RetentionDays
+
 from constructs import Construct
 
 from shared_infrastructure.cherry_lab.environments import US_WEST_2
 
+from typing import cast
 
 app = App()
 
@@ -122,6 +137,61 @@ class AppConfigStack(Stack):
             deployment_strategy_id=deployment_strategy.ref,
             environment_id=environment.ref,
         )
+
+        delete_all_hosted_configuration_versions_on_clean_up = PythonFunction(
+            self,
+            'DeleteAllHostedConfigurationVersionsOnCleanUp',
+            entry='lambda',
+            runtime=Runtime.PYTHON_3_11,
+            index='main.py',
+            handler='custom_resource_handler',
+            timeout=Duration.seconds(60),
+        )
+
+        lambda_role = cast(
+            Role,
+            delete_all_hosted_configuration_versions_on_clean_up.role
+        )
+
+        lambda_role.add_to_policy(
+            PolicyStatement(
+                actions=[
+                    'appconfig:ListHostedConfigurationVersions',
+                    'appconfig:DeleteHostedConfigurationVersion',
+                ],
+                resources=['*'],
+            )
+        )
+
+        provider = Provider(
+            self,
+            'Provider',
+            on_event_handler=delete_all_hosted_configuration_versions_on_clean_up,
+            log_retention=RetentionDays.ONE_MONTH,
+        )
+
+        hosted_configuration_versions_cleaner = CustomResource(
+            self,
+            'HostedConfigurationVersionCleaner',
+            service_token=provider.service_token,
+            properties={
+                'application_id': application.ref,
+                'configuration_profile_id': configuration_profile.ref,
+            }
+        )
+
+        CfnOutput(
+            self,
+            'ApplicationId',
+            value=application.ref,
+        )
+
+        CfnOutput(
+            self,
+            'ConfigurationProfileId',
+            value=configuration_profile.ref,
+        )
+
 
 
 appconfig_stack = AppConfigStack(
