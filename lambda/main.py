@@ -32,7 +32,7 @@ def delete_all_versions(client, application_id, configuration_profile_id, versio
                 ConfigurationProfileId=configuration_profile_id,
                 VersionNumber=version_number
             )
-            logging.info(f'{version_number}: {response}')
+            logging.info(f'Deleting version {version_number}: {response}')
         except Exception as e:
             logging.exception(f'Delete exception for version {version_number}')
 
